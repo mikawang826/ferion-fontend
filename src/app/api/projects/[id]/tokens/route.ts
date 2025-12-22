@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { getProjectForEnterprise } from "@/lib/projects";
 import { prisma } from "@/lib/prisma";
+import { replaceBigIntWithNumber } from "@/lib/json";
 
 const tokenSchema = z.object({
   chain: z.string().min(1, "Chain is required"),
@@ -34,7 +35,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       where: { projectId: project.id },
     });
 
-    return NextResponse.json({ tokens });
+    return NextResponse.json({ tokens: replaceBigIntWithNumber(tokens) });
   } catch (error) {
     console.error("List project tokens error", error);
     return NextResponse.json(
@@ -83,7 +84,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
           },
         });
 
-    return NextResponse.json({ token });
+    return NextResponse.json({ token: replaceBigIntWithNumber(token) });
   } catch (error) {
     console.error("Upsert project token error", error);
     return NextResponse.json(

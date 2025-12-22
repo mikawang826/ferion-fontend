@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  useWatch,
+  type FieldPath,
+  type FieldPathValue,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   assetDetailsSchema,
@@ -186,7 +191,7 @@ export default function CreateWizardPage() {
   const [finalizing, setFinalizing] = useState(false);
 
   const basicsForm = useForm<ProjectBasicsInput>({
-    resolver: zodResolver(projectBasicsSchema) as any,
+    resolver: zodResolver(projectBasicsSchema),
     defaultValues: {
       projectName: "",
       assetType: "",
@@ -196,7 +201,7 @@ export default function CreateWizardPage() {
   });
 
   const chainForm = useForm<BlockchainInput>({
-    resolver: zodResolver(blockchainSchema) as any,
+    resolver: zodResolver(blockchainSchema),
     defaultValues: {
       walletAddress: "",
       network: "",
@@ -204,7 +209,7 @@ export default function CreateWizardPage() {
   });
 
   const assetForm = useForm<AssetDetailsInput>({
-    resolver: zodResolver(assetDetailsSchema) as any,
+    resolver: zodResolver(assetDetailsSchema),
     defaultValues: {
       assetLocation: "",
       assetDescription: "",
@@ -213,7 +218,7 @@ export default function CreateWizardPage() {
   });
 
   const tokenForm = useForm<TokenSettingsInput>({
-    resolver: zodResolver(tokenSettingsSchema) as any,
+    resolver: zodResolver(tokenSettingsSchema),
     defaultValues: {
       tokenName: "",
       tokenSymbol: "",
@@ -224,7 +229,7 @@ export default function CreateWizardPage() {
   });
 
   const revenueForm = useForm<RevenueModelInput>({
-    resolver: zodResolver(revenueModelSchema) as any,
+    resolver: zodResolver(revenueModelSchema),
     defaultValues: {
       revenueMode: "",
       capitalProfile: "",
@@ -464,7 +469,9 @@ export default function CreateWizardPage() {
       }
       setProject(data.project);
       setSuccess("Project created. Redirecting to dashboard...");
-      router.push("/dashboard");
+      const createdId = data?.project?.id ?? projectId;
+      router.push(`/dashboard?projectId=${createdId}`);
+      router.refresh();
     } catch (err) {
       console.error(err);
       setFinalizing(false);
@@ -472,11 +479,26 @@ export default function CreateWizardPage() {
     }
   };
 
-  const basicsValues = basicsForm.watch();
-  const chainValues = chainForm.watch();
-  const assetValues = assetForm.watch();
-  const tokenValues = tokenForm.watch();
-  const revenueValues = revenueForm.watch();
+  const basicsValues = useWatch({
+    control: basicsForm.control,
+    defaultValue: basicsForm.getValues(),
+  }) as ProjectBasicsInput;
+  const chainValues = useWatch({
+    control: chainForm.control,
+    defaultValue: chainForm.getValues(),
+  }) as BlockchainInput;
+  const assetValues = useWatch({
+    control: assetForm.control,
+    defaultValue: assetForm.getValues(),
+  }) as AssetDetailsInput;
+  const tokenValues = useWatch({
+    control: tokenForm.control,
+    defaultValue: tokenForm.getValues(),
+  }) as TokenSettingsInput;
+  const revenueValues = useWatch({
+    control: revenueForm.control,
+    defaultValue: revenueForm.getValues(),
+  }) as RevenueModelInput;
 
   const basicsErrors = {
     projectName: basicsForm.formState.errors.projectName?.message,
@@ -508,51 +530,51 @@ export default function CreateWizardPage() {
     distributionNotes: revenueForm.formState.errors.distributionNotes?.message,
   };
 
-  const updateBasics = <K extends keyof ProjectBasicsInput>(
+  const updateBasics = <K extends FieldPath<ProjectBasicsInput>>(
     key: K,
-    value: ProjectBasicsInput[K]
+    value: FieldPathValue<ProjectBasicsInput, K>
   ) => {
-    basicsForm.setValue(key as any, value as any, {
+    basicsForm.setValue(key, value, {
       shouldValidate: true,
       shouldDirty: true,
     });
   };
 
-  const updateChain = <K extends keyof BlockchainInput>(
+  const updateChain = <K extends FieldPath<BlockchainInput>>(
     key: K,
-    value: BlockchainInput[K]
+    value: FieldPathValue<BlockchainInput, K>
   ) => {
-    chainForm.setValue(key as any, value as any, {
+    chainForm.setValue(key, value, {
       shouldValidate: true,
       shouldDirty: true,
     });
   };
 
-  const updateAsset = <K extends keyof AssetDetailsInput>(
+  const updateAsset = <K extends FieldPath<AssetDetailsInput>>(
     key: K,
-    value: AssetDetailsInput[K]
+    value: FieldPathValue<AssetDetailsInput, K> | undefined
   ) => {
-    assetForm.setValue(key as any, value as any, {
+    assetForm.setValue(key, value as FieldPathValue<AssetDetailsInput, K>, {
       shouldValidate: true,
       shouldDirty: true,
     });
   };
 
-  const updateToken = <K extends keyof TokenSettingsInput>(
+  const updateToken = <K extends FieldPath<TokenSettingsInput>>(
     key: K,
-    value: TokenSettingsInput[K] | undefined
+    value: FieldPathValue<TokenSettingsInput, K> | undefined
   ) => {
-    tokenForm.setValue(key as any, value as any, {
+    tokenForm.setValue(key, value as FieldPathValue<TokenSettingsInput, K>, {
       shouldValidate: true,
       shouldDirty: true,
     });
   };
 
-  const updateRevenue = <K extends keyof RevenueModelInput>(
+  const updateRevenue = <K extends FieldPath<RevenueModelInput>>(
     key: K,
-    value: RevenueModelInput[K] | undefined
+    value: FieldPathValue<RevenueModelInput, K> | undefined
   ) => {
-    revenueForm.setValue(key as any, value as any, {
+    revenueForm.setValue(key, value as FieldPathValue<RevenueModelInput, K>, {
       shouldValidate: true,
       shouldDirty: true,
     });
@@ -699,14 +721,14 @@ export default function CreateWizardPage() {
         {currentStep === 6 && (
           <StepContainer
             title="Review & Create"
-            description="憭??挽蝵殷????遣??"
+            description="Review all details before creating your project."
             onValidate={submitFinalize}
             isLastStep
           >
             <StepReviewCreate project={project} documents={documents} />
             {finalizing && (
               <div className="mt-4 rounded-lg bg-orange-50 px-4 py-3 text-sm text-orange-800">
-                甇??遣??嚗窈蝔?..
+                Finalizing your project. Please wait...
               </div>
             )}
           </StepContainer>
@@ -715,4 +737,3 @@ export default function CreateWizardPage() {
     </WizardLayout>
   );
 }
-

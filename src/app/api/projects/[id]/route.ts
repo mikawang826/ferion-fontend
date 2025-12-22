@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getProjectForEnterprise } from "@/lib/projects";
 import { prisma } from "@/lib/prisma";
+import { replaceBigIntWithNumber } from "@/lib/json";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -18,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
-    return NextResponse.json({ project });
+    return NextResponse.json({ project: replaceBigIntWithNumber(project) });
   } catch (error) {
     console.error("Get project error", error);
     return NextResponse.json(

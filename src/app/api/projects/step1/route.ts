@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { projectBasicsSchema } from "@/lib/validators";
+import { replaceBigIntWithNumber } from "@/lib/json";
 
 export async function POST(req: Request) {
   try {
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
       update: {},
     });
 
-    return NextResponse.json({ project });
+    return NextResponse.json({ project: replaceBigIntWithNumber(project) });
   } catch (error) {
     console.error("Step1 save error", error);
     return NextResponse.json(

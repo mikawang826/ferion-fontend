@@ -25,6 +25,7 @@ import {
   X,
   Trash2,
 } from "lucide-react";
+import type { Project } from "@/types/project";
 
 type SectionKey =
   | "overview"
@@ -1381,12 +1382,10 @@ function EditPortalSection() {
 }
 
 function DeleteProjectDialog({
-  isOpen,
   onClose,
   onConfirm,
   projectName,
 }: {
-  isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   projectName?: string;
@@ -1395,12 +1394,6 @@ function DeleteProjectDialog({
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      setCountdown(10);
-      setIsDeleting(false);
-      return;
-    }
-
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -1412,7 +1405,7 @@ function DeleteProjectDialog({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen]);
+  }, []);
 
   const handleConfirm = async () => {
     if (countdown > 0) return;
@@ -1420,14 +1413,12 @@ function DeleteProjectDialog({
     await onConfirm();
   };
 
-  if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-[color:var(--console-text)]">
-            删除项目
+            Delete project
           </h2>
           <button
             type="button"
@@ -1440,10 +1431,12 @@ function DeleteProjectDialog({
 
         <div className="mb-6">
           <p className="text-sm text-[color:var(--console-text)]">
-            您确定要删除项目 <span className="font-semibold">{projectName || "此项目"}</span> 吗？
+            Are you sure you want to delete{" "}
+            <span className="font-semibold">{projectName || "this project"}</span>
+            ?
           </p>
           <p className="mt-2 text-sm text-red-600">
-            项目删除之后不可恢复
+            This action cannot be undone.
           </p>
         </div>
 
@@ -1453,7 +1446,7 @@ function DeleteProjectDialog({
             onClick={onClose}
             className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-[color:var(--console-text)] hover:bg-slate-50"
           >
-            取消
+            Cancel
           </button>
           <button
             type="button"
@@ -1462,10 +1455,10 @@ function DeleteProjectDialog({
             className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isDeleting
-              ? "删除中..."
+              ? "Deleting..."
               : countdown > 0
-                ? `确认删除 (${countdown}s)`
-                : "确认删除"}
+                ? `Confirm delete (${countdown}s)`
+                : "Confirm delete"}
           </button>
         </div>
       </div>
@@ -1481,42 +1474,36 @@ export default function ConsoleShell() {
   const [activeSection, setActiveSection] = useState<SectionKey>(
     isOverviewMode ? "overview" : "home",
   );
-  const [projectData, setProjectData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [projectData, setProjectData] = useState<Project | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  const baseMeta = sectionMeta[activeSection];
+
+  const resolvedSection = isOverviewMode
+    ? overviewItems.some((item) => item.id === activeSection)
+      ? activeSection
+      : "overview"
+    : activeSection === "overview"
+      ? "home"
+      : activeSection;
+
+  const baseMeta = sectionMeta[resolvedSection];
   const meta =
-    isOverviewMode && overviewMetaOverrides[activeSection]
-      ? overviewMetaOverrides[activeSection]
+    isOverviewMode && overviewMetaOverrides[resolvedSection]
+      ? overviewMetaOverrides[resolvedSection]
       : baseMeta;
   const menuItems = isOverviewMode ? overviewItems : fullSecondaryItems;
-  const selectItems = menuItems.some((item) => item.id === activeSection)
+  const selectItems = menuItems.some((item) => item.id === resolvedSection)
     ? menuItems
     : [
         ...menuItems,
         {
-          id: activeSection,
+          id: resolvedSection,
           label:
-            activeSection === "offering-form"
+            resolvedSection === "offering-form"
               ? "Offering information"
-              : sectionMeta[activeSection]?.title ?? activeSection,
+              : sectionMeta[resolvedSection]?.title ?? resolvedSection,
           icon: FileText,
         },
       ];
-
-  // Fetch project data when projectId is available
-  useEffect(() => {
-    if (!projectId) {
-      setActiveSection("overview");
-      setProjectData(null);
-      return;
-    }
-    
-    if (activeSection === "overview") {
-      setActiveSection("home");
-    }
-  }, [projectId]);
 
   // Fetch project data separately
   useEffect(() => {
@@ -1525,7 +1512,6 @@ export default function ConsoleShell() {
     }
 
     const fetchProject = async () => {
-      setLoading(true);
       try {
         const response = await fetch(`/api/projects/${projectId}`);
         if (response.ok) {
@@ -1536,8 +1522,6 @@ export default function ConsoleShell() {
         }
       } catch (error) {
         console.error("Error fetching project:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -1545,7 +1529,7 @@ export default function ConsoleShell() {
   }, [projectId]);
 
   // Compute projectInfo from projectData or use default
-  const projectInfo = projectData
+  const projectInfo = projectId && projectData
     ? {
         name: projectData.name || "ASSET",
         displayName: projectData.name || "Brickken Asset",
@@ -1565,25 +1549,27 @@ export default function ConsoleShell() {
 
       if (response.ok) {
         // Redirect to overview page after successful deletion
-        router.push("/console?projectId=");
+        setShowDeleteDialog(false);
+        setActiveSection("overview");
+        router.push("/dashboard");
         router.refresh();
       } else {
         const data = await response.json();
-        alert(data.error || "删除项目失败");
+        alert(data.error || "Failed to delete project.");
         setShowDeleteDialog(false);
       }
     } catch (error) {
       console.error("Error deleting project:", error);
-      alert("删除项目时发生错误");
+      alert("An error occurred while deleting the project.");
       setShowDeleteDialog(false);
     }
   };
 
   const renderHeaderActions = () => {
-    if (activeSection === "overview") {
+    if (resolvedSection === "overview") {
       return null;
     }
-    if (activeSection === "offerings") {
+    if (resolvedSection === "offerings") {
       return (
         <>
           <ConsoleButton
@@ -1595,7 +1581,7 @@ export default function ConsoleShell() {
         </>
       );
     }
-    if (activeSection === "offering-form") {
+    if (resolvedSection === "offering-form") {
       return (
         <ConsoleButton
           label="Back to offerings"
@@ -1604,7 +1590,7 @@ export default function ConsoleShell() {
         />
       );
     }
-    if (activeSection === "investment-portal") {
+    if (resolvedSection === "investment-portal") {
       return (
         <>
           <ConsoleButton label="Go to investment portal" variant="primary" />
@@ -1616,7 +1602,7 @@ export default function ConsoleShell() {
         </>
       );
     }
-    if (activeSection === "edit-portal") {
+    if (resolvedSection === "edit-portal") {
       return (
         <>
           <ConsoleButton label="Preview" variant="ghost" />
@@ -1624,14 +1610,14 @@ export default function ConsoleShell() {
         </>
       );
     }
-    if (activeSection === "documents") {
+    if (resolvedSection === "documents") {
       return <ConsoleButton label="Publish" icon={CheckCircle} />;
     }
     return <ConsoleButton label="Connect wallet" icon={Wallet} variant="outline" />;
   };
 
   const renderSection = () => {
-    switch (activeSection) {
+    switch (resolvedSection) {
       case "overview":
         return <OverviewSection />;
       case "home":
@@ -1674,7 +1660,7 @@ export default function ConsoleShell() {
       <div className="console-topbar">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-[11px] uppercase tracking-wide text-[color:var(--console-muted)]">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="console-pill">You're in demo mode</span>
+            <span className="console-pill">You&apos;re in demo mode</span>
             <span className="inline-flex items-center gap-1">
               <CheckCircle className="h-3 w-3" />
               Complete your KYC information
@@ -1702,7 +1688,7 @@ export default function ConsoleShell() {
               <div className="flex flex-col gap-1">
                 {overviewItems.map((item) => {
                   const isDisabled = Boolean(item.disabled);
-                  const active = !isDisabled && activeSection === item.id;
+                  const active = !isDisabled && resolvedSection === item.id;
                   const Icon = item.icon;
                   return (
                     <button
@@ -1735,7 +1721,7 @@ export default function ConsoleShell() {
                   </p>
                   <div className="mt-2 flex flex-col gap-1">
                     {group.items.map((item) => {
-                      const active = activeSection === item.id;
+                      const active = resolvedSection === item.id;
                       const Icon = item.icon;
                       return (
                         <button
@@ -1801,7 +1787,7 @@ export default function ConsoleShell() {
             <div className="mt-2">
               <select
                 className="console-input w-full"
-                value={activeSection}
+                value={resolvedSection}
                 onChange={(event) =>
                   setActiveSection(event.target.value as SectionKey)
                 }
@@ -1823,13 +1809,13 @@ export default function ConsoleShell() {
         </main>
       </div>
 
-      <DeleteProjectDialog
-        isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onConfirm={handleDeleteProject}
-        projectName={projectData?.name}
-      />
+      {showDeleteDialog && (
+        <DeleteProjectDialog
+          onClose={() => setShowDeleteDialog(false)}
+          onConfirm={handleDeleteProject}
+          projectName={projectData?.name}
+        />
+      )}
     </div>
   );
 }
-

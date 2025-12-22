@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getProjectForEnterprise } from "@/lib/projects";
 import { prisma } from "@/lib/prisma";
 import { assetDetailsSchema } from "@/lib/validators";
+import { replaceBigIntWithNumber } from "@/lib/json";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -42,7 +43,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       },
     });
 
-    return NextResponse.json({ project: updated });
+    return NextResponse.json({
+      project: replaceBigIntWithNumber(updated),
+    });
   } catch (error) {
     console.error("Step3 save error", error);
     return NextResponse.json(

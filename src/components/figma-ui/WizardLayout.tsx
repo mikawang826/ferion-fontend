@@ -25,6 +25,12 @@ export function WizardLayout({
   className = "",
   contentClassName = "",
 }: WizardLayoutProps) {
+  const gridTemplateColumns = `repeat(${steps.length}, minmax(0, 1fr))`;
+  const progressPercent =
+    steps.length > 1
+      ? ((Math.min(currentStep, steps.length) - 1) / (steps.length - 1)) * 100
+      : 0;
+
   return (
     <div
       className={`min-h-full bg-transparent ${className}`}
@@ -58,48 +64,58 @@ export function WizardLayout({
               Guided Creation
             </p>
           </div>
-          <div className="mt-4 flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div key={step.id} className="flex flex-1 items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${
-                      step.id < currentStep
-                        ? "border-orange-500 bg-orange-500 text-white"
-                        : step.id === currentStep
-                        ? "border-orange-500 bg-white text-orange-600 shadow-sm"
-                        : "border-white/70 bg-white/50 text-slate-400"
-                    }`}
-                  >
-                    {step.id < currentStep ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <span>{step.id}</span>
-                    )}
+          <div className="mt-4">
+            <div className="relative">
+              <div className="absolute left-0 right-0 top-1/2 h-0.5 -translate-y-1/2 bg-slate-200" />
+              <div
+                className="absolute left-0 top-1/2 h-0.5 -translate-y-1/2 bg-orange-500 transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+              <div
+                className="relative z-10 grid items-center"
+                style={{ gridTemplateColumns }}
+              >
+                {steps.map((step) => (
+                  <div key={step.id} className="flex justify-center">
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm transition-all ${
+                        step.id < currentStep
+                          ? "border-orange-500 bg-orange-500 text-white"
+                          : step.id === currentStep
+                          ? "border-orange-500 bg-white text-orange-600 ring-2 ring-orange-300"
+                          : "border-slate-300 bg-white text-slate-600 font-semibold ring-1 ring-slate-200"
+                      }`}
+                    >
+                      {step.id < currentStep ? (
+                        <Check className="h-5 w-5" />
+                      ) : (
+                        <span>{step.id}</span>
+                      )}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </div>
+            <div
+              className="mt-3 grid"
+              style={{ gridTemplateColumns }}
+            >
+              {steps.map((step) => (
+                <div key={step.id} className="flex justify-center px-2">
                   <p
-                    className={`mt-2 text-center text-sm ${
+                    className={`text-center text-sm ${
                       step.id === currentStep
-                        ? "text-orange-600"
+                        ? "text-orange-600 font-semibold"
                         : step.id < currentStep
                         ? "text-slate-700"
-                        : "text-slate-400"
+                        : "text-slate-500"
                     }`}
                   >
                     {step.title}
                   </p>
                 </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`mx-4 -mt-8 flex-1 h-0.5 transition-all ${
-                      step.id < currentStep
-                        ? "bg-orange-500"
-                        : "bg-white/60"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

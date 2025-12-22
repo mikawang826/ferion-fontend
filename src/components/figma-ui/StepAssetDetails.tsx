@@ -11,7 +11,7 @@ interface StepProps {
   documents: Doc[];
   onChange: <K extends keyof AssetDetailsInput>(
     key: K,
-    value: AssetDetailsInput[K]
+    value: AssetDetailsInput[K] | undefined
   ) => void;
   onUpload: (files: FileList | null) => void;
 }
@@ -89,7 +89,7 @@ export function StepAssetDetails({ values, errors, documents, onChange, onUpload
               onChange={(e) =>
                 onChange(
                   'assetValue',
-                  (e.target.value === '' ? undefined : Number(e.target.value)) as any
+                  e.target.value === '' ? undefined : Number(e.target.value)
                 )
               }
               placeholder="1000000"
@@ -163,4 +163,3 @@ export function StepAssetDetails({ values, errors, documents, onChange, onUpload
     </div>
   );
 }
-

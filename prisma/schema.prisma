@@ -58,7 +58,7 @@ model Project {
   assetValue                   Float?
   tokenName                    String?
   tokenSymbol                  String?
-  totalSupply                  Int?
+  totalSupply                  BigInt?
   tokenDecimals                Int?               @default(18)
   initialPrice                 Float?
   revenueMode                  String?
@@ -105,7 +105,7 @@ model ProjectToken {
   symbol          String
   decimal         Int
   contractAddress String?
-  totalSupply     Int?
+  totalSupply     BigInt?
   NAV             Int?
 
   @@unique([projectId, symbol])

@@ -130,7 +130,7 @@ export default async function ProjectsPage() {
 
           {projects.length === 0 && (
             <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-600">
-              ??憿寧嚗?餃銝??? New Project??憪?撱箝?
+              No projects yet. Create a new project to get started.
             </div>
           )}
         </div>
@@ -138,4 +138,3 @@ export default async function ProjectsPage() {
     </main>
   );
 }
-

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureMilestones, getProjectForEnterprise } from "@/lib/projects";
 import { prisma } from "@/lib/prisma";
+import { replaceBigIntWithNumber } from "@/lib/json";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -60,7 +61,9 @@ export async function POST(_req: NextRequest, { params }: Params) {
       },
     });
 
-    return NextResponse.json({ project: updated });
+    return NextResponse.json({
+      project: replaceBigIntWithNumber(updated),
+    });
   } catch (error) {
     console.error("Finalize error", error);
     return NextResponse.json(

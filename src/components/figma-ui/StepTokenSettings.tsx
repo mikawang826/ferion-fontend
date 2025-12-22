@@ -66,7 +66,7 @@ export function StepTokenSettings({ values, errors, assetValue, onChange }: Step
       <div className="space-y-6">
         {!assetValue && (
           <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800">
-            霂瑕????sset Details??甇仿炊憛怠? Asset Value嚗頂蝏??質?刻恣蝞?銵駁???
+            Complete Asset Details and provide an Asset Value to calculate supply.
           </div>
         )}
 
@@ -148,7 +148,8 @@ export function StepTokenSettings({ values, errors, assetValue, onChange }: Step
             <div className="mt-1 text-sm text-red-600">{errors.initialPrice}</div>
           )}
           <div className="mt-2 text-slate-500">
-            Total Supply ?芸霈∠?嚗sset Value 繩 Initial Token Price嚗?Decimals ?箏?銝?18嚗???其??寥?閫葉?亦???
+            Total supply is calculated from Asset Value and Initial Token Price.
+            Token decimals are fixed at 18 and cannot be changed.
           </div>
         </div>
 
@@ -172,7 +173,7 @@ export function StepTokenSettings({ values, errors, assetValue, onChange }: Step
                 </div>
                 {showHighValueWarning && (
                   <div className="text-amber-700 mt-2">
-                    ?? Warning: Single token value exceeds $1M. Consider increasing total supply.
+                    Warning: Single token value exceeds $1M. Consider increasing total supply.
                   </div>
                 )}
               </div>
@@ -183,4 +184,3 @@ export function StepTokenSettings({ values, errors, assetValue, onChange }: Step
     </div>
   );
 }
-
