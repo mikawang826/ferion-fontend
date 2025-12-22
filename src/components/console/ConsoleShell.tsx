@@ -40,6 +40,14 @@ type SectionKey =
   | "investment-portal"
   | "edit-portal";
 
+type PortalState =
+  | "NOT_PUBLISHED"
+  | "PUBLISHING_TO_TEST"
+  | "TEST_READY"
+  | "PROMOTING_TO_PROD"
+  | "PROD_LIVE"
+  | "DEPLOY_FAILED";
+
 type SecondaryItem = {
   id: SectionKey;
   label: string;
@@ -173,6 +181,71 @@ function getAssetTypeLabel(assetType: string | null | undefined): string {
   return ASSET_TYPE_MAP[assetType] || assetType;
 }
 
+const STATUS_META: Record<
+  string,
+  { label: string; color: string; dot: string }
+> = {
+  DRAFT: {
+    label: "Draft",
+    color: "bg-slate-100 text-slate-700",
+    dot: "bg-slate-400",
+  },
+  REVIEWING: {
+    label: "Reviewing",
+    color: "bg-amber-100 text-amber-800",
+    dot: "bg-amber-500",
+  },
+  DEVELOPING: {
+    label: "Developing",
+    color: "bg-blue-100 text-blue-800",
+    dot: "bg-blue-500",
+  },
+  TESTING: {
+    label: "Testing",
+    color: "bg-purple-100 text-purple-800",
+    dot: "bg-purple-500",
+  },
+  READY: {
+    label: "Ready",
+    color: "bg-emerald-100 text-emerald-800",
+    dot: "bg-emerald-500",
+  },
+  LIVE: {
+    label: "Live",
+    color: "bg-green-100 text-green-800",
+    dot: "bg-green-500",
+  },
+  ARCHIVED: {
+    label: "Archived",
+    color: "bg-slate-100 text-slate-500",
+    dot: "bg-slate-400",
+  },
+};
+
+function getStatusMeta(status?: string | null) {
+  if (!status) {
+    return { label: "Draft", color: "bg-slate-100 text-slate-700", dot: "bg-slate-400" };
+  }
+  const key = status.toUpperCase();
+  return STATUS_META[key] ?? {
+    label: status,
+    color: "bg-slate-100 text-slate-700",
+    dot: "bg-slate-400",
+  };
+}
+
+function StatusPill({ status }: { status?: string | null }) {
+  const meta = getStatusMeta(status);
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${meta.color}`}
+    >
+      <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
+      {meta.label}
+    </span>
+  );
+}
+
 // Default project info (used when no projectId is provided)
 const defaultProjectInfo = {
   name: "ASSET",
@@ -180,6 +253,7 @@ const defaultProjectInfo = {
   type: "Equity",
   address: "0xb2AEf5aB0721689F9470eE3e9361Bcd16183dD",
   chain: "Ethereum",
+  status: "Draft",
 };
 
 type ButtonVariant = "primary" | "outline" | "ghost";
@@ -755,26 +829,29 @@ function ProjectHomeSection({ projectInfo }: { projectInfo: typeof defaultProjec
       <Stagger index={0}>
         <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
           <Panel className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 p-[2px]">
-                <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-900 text-xs font-semibold text-white">
-                  BK
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 p-[2px]">
+                  <div className="flex h-full w-full items-center justify-center rounded-2xl bg-slate-900 text-xs font-semibold text-white">
+                    BK
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold uppercase text-[color:var(--console-text)]">
+                      {projectInfo.name}
+                    </span>
+                    <span className="console-pill">{projectInfo.type}</span>
+                  </div>
+                  <p className="text-xs text-[color:var(--console-muted)]">
+                    Digital asset contract address
+                  </p>
+                  <p className="text-xs text-[color:var(--console-muted)]">
+                    {projectInfo.address}
+                  </p>
                 </div>
               </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold uppercase text-[color:var(--console-text)]">
-                    {projectInfo.name}
-                  </span>
-                  <span className="console-pill">{projectInfo.type}</span>
-                </div>
-                <p className="text-xs text-[color:var(--console-muted)]">
-                  Digital asset contract address
-                </p>
-                <p className="text-xs text-[color:var(--console-muted)]">
-                  {projectInfo.address}
-                </p>
-              </div>
+              <StatusPill status={projectInfo.status} />
             </div>
             <div className="mt-6 flex items-center justify-between">
               <div>
@@ -1206,14 +1283,6 @@ function DocumentsSection() {
               <li>Information will be visible in the investment portal.</li>
             </ul>
           </div>
-          <div className="mt-4 flex items-center gap-4 text-xs font-semibold uppercase text-[color:var(--console-muted)]">
-            <button type="button" className="console-tab console-tab-active">
-              English
-            </button>
-            <button type="button" className="console-tab">
-              Spanish
-            </button>
-          </div>
           <button
             type="button"
             className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-[color:var(--console-accent)]"
@@ -1230,23 +1299,232 @@ function DocumentsSection() {
   );
 }
 
-function InvestmentPortalSection({ onEdit }: { onEdit: () => void }) {
+type PortalInfo = {
+  link: string;
+  prodLink: string;
+  testLink: string;
+  prodVersion: string;
+  testVersion: string;
+  publishedBy: string;
+  publishedAt: string;
+  state: PortalState;
+};
+
+function InvestmentPortalSection({
+  onEdit,
+  portalInfo,
+}: {
+  onEdit: () => void;
+  portalInfo: PortalInfo;
+}) {
+  const stateMeta: Record<
+    PortalState,
+    { label: string; color: string; dot: string; desc: string }
+  > = {
+    NOT_PUBLISHED: {
+      label: "Not published",
+      color: "bg-slate-100 text-slate-700",
+      dot: "bg-slate-400",
+      desc: "Your portal has not been published yet. Publish a draft to start testing.",
+    },
+    PUBLISHING_TO_TEST: {
+      label: "Publishing to Test",
+      color: "bg-blue-100 text-blue-800",
+      dot: "bg-blue-500",
+      desc: "We received your publish request and are deploying to the test environment.",
+    },
+    TEST_READY: {
+      label: "Test environment",
+      color: "bg-blue-100 text-blue-800",
+      dot: "bg-blue-500",
+      desc: "Test environment is live. Review and confirm to deploy to production.",
+    },
+    PROMOTING_TO_PROD: {
+      label: "Deploying to Production",
+      color: "bg-amber-100 text-amber-800",
+      dot: "bg-amber-500",
+      desc: "Production deployment in progress.",
+    },
+    PROD_LIVE: {
+      label: "Production live",
+      color: "bg-emerald-100 text-emerald-800",
+      dot: "bg-emerald-500",
+      desc: "Production environment is live. New edits will go to Test first.",
+    },
+    DEPLOY_FAILED: {
+      label: "Deployment failed",
+      color: "bg-rose-100 text-rose-800",
+      dot: "bg-rose-500",
+      desc: "Deployment failed. Please resubmit or contact support.",
+    },
+  };
+
+  const meta = stateMeta[portalInfo.state] ?? stateMeta.NOT_PUBLISHED;
+
+  const renderActions = () => {
+    switch (portalInfo.state) {
+      case "NOT_PUBLISHED":
+        return (
+          <ConsoleButton
+            label="Edit & publish draft"
+            variant="primary"
+            onClick={onEdit}
+          />
+        );
+      case "PUBLISHING_TO_TEST":
+        return (
+          <ConsoleButton
+            label="Publishing to Test..."
+            variant="outline"
+            onClick={undefined}
+            className="opacity-80"
+          />
+        );
+      case "TEST_READY":
+        return (
+          <>
+            <ConsoleButton label="Go to test portal" variant="primary" />
+            <ConsoleButton label="Edit portal" variant="outline" onClick={onEdit} />
+            <ConsoleButton
+              label="Confirm & deploy to Production"
+              variant="primary"
+              className="bg-emerald-500 hover:bg-emerald-600"
+            />
+          </>
+        );
+      case "PROMOTING_TO_PROD":
+        return (
+          <>
+            <ConsoleButton label="Go to test portal" variant="outline" />
+            <ConsoleButton
+              label="Deploying to Production..."
+              variant="primary"
+              className="opacity-80"
+            />
+          </>
+        );
+      case "PROD_LIVE":
+        return (
+          <>
+            <ConsoleButton label="Go to production portal" variant="primary" />
+            <ConsoleButton label="Edit portal" variant="outline" onClick={onEdit} />
+          </>
+        );
+      case "DEPLOY_FAILED":
+        return (
+          <>
+            <ConsoleButton label="Edit portal" variant="outline" onClick={onEdit} />
+            <ConsoleButton
+              label="Retry deploy"
+              variant="primary"
+            />
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <section className="space-y-6">
       <Stagger index={0}>
-        <Panel className="p-10">
-          <EmptyState
-            title="No offerings found yet"
-            description="Your investment portal is awaiting its first digital asset offering."
-            actionLabel="Create Digital Asset Offering"
-          />
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <ConsoleButton label="Go to investment portal" variant="primary" />
-            <ConsoleButton
-              label="Edit investment portal"
-              variant="outline"
-              onClick={onEdit}
-            />
+        <Panel className="p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-[color:var(--console-text)]">
+                Published investment portal
+              </p>
+              <p className="text-xs text-[color:var(--console-muted)]">
+                Latest status and environment workflow
+              </p>
+            </div>
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${meta.color}`}
+            >
+              <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
+              {meta.label}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <div className="console-card console-card-strong flex flex-col gap-3 p-4">
+              <p className="text-xs font-semibold uppercase text-[color:var(--console-muted)]">
+                Production link
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  className="console-input flex-1 min-w-[240px]"
+                  readOnly
+                  value={
+                    portalInfo.prodLink ||
+                    "Production link pending (deploying or not published)"
+                  }
+                />
+                <ConsoleButton label="Open" variant="outline" />
+              </div>
+              <p className="text-[11px] text-[color:var(--console-muted)]">
+                Share this link with investors when Production is live.
+              </p>
+            </div>
+
+            <div className="console-card console-card-strong p-4">
+              <p className="text-xs font-semibold uppercase text-[color:var(--console-muted)]">
+                Production version
+              </p>
+              <p className="text-lg font-semibold text-[color:var(--console-text)]">
+                {portalInfo.prodVersion || "—"}
+              </p>
+              <div className="mt-3 space-y-1 text-xs text-[color:var(--console-muted)]">
+                <p>
+                  Published by{" "}
+                  <span className="font-semibold text-[color:var(--console-text)]">
+                    {portalInfo.publishedBy}
+                  </span>
+                </p>
+                <p>On {portalInfo.publishedAt}</p>
+                <p className="text-[11px]">
+                  Workflow: edits publish to Test; after you confirm, we deploy to Production.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[2fr_1fr]">
+            <div className="console-card console-card-strong flex flex-col gap-3 p-4">
+              <p className="text-xs font-semibold uppercase text-[color:var(--console-muted)]">
+                Test link
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  className="console-input flex-1 min-w-[240px]"
+                  readOnly
+                  value={
+                    portalInfo.testLink ||
+                    "Test link not available until first publish"
+                  }
+                />
+                <ConsoleButton label="Open" variant="outline" />
+              </div>
+              <p className="text-[11px] text-[color:var(--console-muted)]">
+                New edits are deployed to Test first. Confirm before promoting to Production.
+              </p>
+            </div>
+
+            <div className="console-card console-card-strong p-4">
+              <p className="text-xs font-semibold uppercase text-[color:var(--console-muted)]">
+                Test version
+              </p>
+              <p className="text-lg font-semibold text-[color:var(--console-text)]">
+                {portalInfo.testVersion || "—"}
+              </p>
+              <p className="mt-2 text-[11px] text-[color:var(--console-muted)]">
+                Use this to verify before confirming production deployment.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            {renderActions()}
           </div>
         </Panel>
       </Stagger>
@@ -1318,14 +1596,6 @@ function EditPortalSection() {
 
       <Stagger index={2}>
         <Panel className="p-6">
-          <div className="flex items-center gap-4 text-[11px] font-semibold uppercase text-[color:var(--console-muted)]">
-            <button type="button" className="console-tab console-tab-active">
-              English
-            </button>
-            <button type="button" className="console-tab">
-              Spanish
-            </button>
-          </div>
           <div className="mt-4 grid gap-4">
             <FormField label="Hero section heading" />
             <FormField label="Hero section description" />
@@ -1504,10 +1774,14 @@ export default function ConsoleShell() {
           icon: FileText,
         },
       ];
+  // Key to force remount when project changes (for animations)
+  const contentKey = projectId || "overview";
 
   // Fetch project data separately
   useEffect(() => {
     if (!projectId) {
+      // Reset section when leaving project mode
+      setActiveSection("overview");
       return;
     }
 
@@ -1536,8 +1810,25 @@ export default function ConsoleShell() {
         type: getAssetTypeLabel(projectData.assetType),
         address: projectData.walletAddress || "0xb2AEf5aB0721689F9470eE3e9361Bcd16183dD",
         chain: projectData.network || "Ethereum",
+        status: projectData.status || "Draft",
       }
     : defaultProjectInfo;
+  const portalInfo: PortalInfo = {
+    prodLink:
+      (projectData as any)?.portalProdUrl ||
+      (projectId ? `https://portal.example.com/${projectId}` : ""),
+    testLink:
+      (projectData as any)?.portalTestUrl ||
+      (projectId ? `https://portal-test.example.com/${projectId}` : ""),
+    prodVersion: (projectData as any)?.portalProdVersion || "",
+    testVersion: (projectData as any)?.portalTestVersion || "",
+    publishedBy: (projectData as any)?.portalPublishedBy || "Demo User",
+    publishedAt:
+      (projectData as any)?.portalPublishedAt ||
+      new Date().toLocaleDateString(),
+    state: ((projectData as any)?.portalState?.toUpperCase() ||
+      "NOT_PUBLISHED") as PortalState,
+  };
 
   const handleDeleteProject = async () => {
     if (!projectId) return;
@@ -1646,6 +1937,7 @@ export default function ConsoleShell() {
         return (
           <InvestmentPortalSection
             onEdit={() => setActiveSection("edit-portal")}
+            portalInfo={portalInfo}
           />
         );
       case "edit-portal":
@@ -1747,6 +2039,19 @@ export default function ConsoleShell() {
 
           {!isOverviewMode && (
             <div className="mt-auto space-y-2 text-xs text-[color:var(--console-muted)]">
+              <div className="rounded-2xl border border-white/60 bg-white/70 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[color:var(--console-text)]">
+                    Status
+                  </span>
+                  <StatusPill status={projectInfo.status} />
+                </div>
+                {projectData?.updatedAt ? (
+                  <p className="mt-2 text-[11px]">
+                    Updated {new Date(projectData.updatedAt).toLocaleDateString()}
+                  </p>
+                ) : null}
+              </div>
               <button
                 type="button"
                 onClick={() => setShowDeleteDialog(true)}
@@ -1761,7 +2066,7 @@ export default function ConsoleShell() {
           )}
         </aside>
 
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <main key={contentKey} className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <header className="flex flex-wrap items-center justify-between gap-4">
             <div>
               {meta.subtitle ? (

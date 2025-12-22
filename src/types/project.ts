@@ -1,6 +1,11 @@
 export type ProjectStatus =
   | "DRAFT"
   | "REVIEW"
+  | "REVIEWING"
+  | "DEVELOPING"
+  | "TESTING"
+  | "READY"
+  | "LIVE"
   | "ACTIVE"
   | "REJECTED"
   | "ARCHIVED";
