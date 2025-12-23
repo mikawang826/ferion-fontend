@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -543,36 +543,6 @@ function FormField({
   );
 }
 
-function ToggleRow({
-  label,
-  enabled,
-}: {
-  label: string;
-  enabled?: boolean;
-}) {
-  const isOn = Boolean(enabled);
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/60 bg-white/60 px-4 py-3">
-      <span className="text-sm font-medium text-[color:var(--console-text)]">
-        {label}
-      </span>
-      <div
-        className={`flex h-5 w-10 items-center rounded-full p-0.5 transition ${
-          isOn
-            ? "bg-[var(--console-accent)]"
-            : "bg-[color:var(--console-border)]"
-        }`}
-      >
-        <span
-          className={`h-4 w-4 rounded-full bg-white shadow transition ${
-            isOn ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </div>
-    </div>
-  );
-}
-
 function EmptyState({
   title,
   description,
@@ -613,10 +583,26 @@ function EmptyState({
 
 function OverviewSection() {
   const digitalAssetStats = [
-    { label: "Total digital assets created", value: "0" },
-    { label: "Tokens with live Token Store", value: "0" },
-    { label: "Tokens with live Token Offering", value: "0" },
-    { label: "Total value locked (TVL)", value: "0.0 $" },
+    {
+      label: "Total digital asset value created (USD)",
+      value: "$0.00",
+      helper: "USD value of all projects set up.",
+    },
+    {
+      label: "Value of tokens with live Store (USD)",
+      value: "$0.00",
+      helper: "USD value of assets with a public store listing.",
+    },
+    {
+      label: "Value of tokens with live Offering (USD)",
+      value: "$0.00",
+      helper: "USD value of assets currently raising or for sale.",
+    },
+    {
+      label: "Value of tokens successfully funded/closed (USD)",
+      value: "$0.00",
+      helper: "USD value of offerings that closed successfully.",
+    },
   ];
   const offeringStats = [
     { label: "Total offerings created", value: "0" },
@@ -1532,121 +1518,906 @@ function InvestmentPortalSection({
   );
 }
 
-function EditPortalSection() {
+function EditPortalSection({ projectId }: { projectId?: string }) {
+  type PortalFormState = Record<string, string | boolean | File | null | undefined>;
+
   const tabs = [
-    "Media",
-    "Sections",
-    "Team",
-    "Colors",
-    "Contact",
-    "Reports",
-    "SEO",
-    "Transfer",
-    "FAQs",
-    "Highlights",
-    "Press",
-    "Offerings",
+    { id: "media", label: "Media" },
+    { id: "sections", label: "Sections" },
+    { id: "team", label: "Team" },
+    { id: "colors", label: "Colors" },
+    { id: "contact", label: "Contact" },
+    { id: "reports", label: "Reports" },
+    { id: "seo", label: "SEO" },
+    { id: "transfer", label: "Transfer" },
+    { id: "faqs", label: "FAQs" },
+    { id: "highlights", label: "Highlights" },
+    { id: "press", label: "Press section" },
+    { id: "offerings", label: "Offerings" },
   ];
+
+  const [activeTab, setActiveTab] = useState<string>("media");
+  const [transferTab, setTransferTab] = useState<"bank" | "crypto">("crypto");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formState, setFormState] = useState<PortalFormState>({
+    sections_partners: true,
+    sections_reasons: true,
+    sections_roadmap: true,
+    sections_whitepaper: true,
+    sections_highlights: true,
+    sections_team: true,
+    sections_offering: true,
+    showApy: true,
+    showScheduledCounter: true,
+    showActiveCounter: true,
+    color_background: "#f6f8ff",
+    color_accentText: "#1776FF",
+    color_icon: "#206c65",
+    color_primary: "#2a6dc5",
+    color_infoButton: "#000000",
+    color_infoBox: "#f1f3f7",
+    color_secondary: "#90949c",
+  });
+
+  const updateField = (name: string, value: string | boolean | File | null) => {
+    setFormState((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const getTextValue = (name: string) => {
+    const value = formState[name];
+    return typeof value === "string" ? value : "";
+  };
+
+  const SectionHeader = ({
+    title,
+    subtitle,
+  }: {
+    title: string;
+    subtitle?: string;
+  }) => (
+    <div>
+      <p className="text-sm font-semibold text-[color:var(--console-text)]">
+        {title}
+      </p>
+      {subtitle ? (
+        <p className="text-xs text-[color:var(--console-muted)]">{subtitle}</p>
+      ) : null}
+    </div>
+  );
+
+  const SwitchControl = ({
+    on = false,
+    dangerWhenOff,
+    onToggle,
+  }: {
+    on?: boolean;
+    dangerWhenOff?: boolean;
+    onToggle?: () => void;
+  }) => (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex h-5 w-10 items-center rounded-full p-0.5 transition ${
+        on
+          ? "bg-[var(--console-accent)]"
+          : dangerWhenOff
+            ? "bg-rose-400"
+            : "bg-[color:var(--console-border)]"
+      }`}
+      aria-pressed={on}
+    >
+      <span
+        className={`h-4 w-4 rounded-full bg-white shadow transition ${
+          on ? "translate-x-5" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+
+  const InlineToggleRow = ({
+    label,
+    name,
+    dangerWhenOff,
+  }: {
+    label: string;
+    name: string;
+    dangerWhenOff?: boolean;
+  }) => {
+    const isOn = Boolean(formState[name]);
+    return (
+      <div className="flex items-center justify-between rounded-2xl border border-white/60 bg-white/60 px-4 py-3">
+        <span className="text-sm font-medium text-[color:var(--console-text)]">
+          {label}
+        </span>
+        <SwitchControl
+          on={isOn}
+          dangerWhenOff={dangerWhenOff}
+          onToggle={() => updateField(name, !isOn)}
+        />
+      </div>
+    );
+  };
+
+  const UploadField = ({
+    label,
+    name,
+    placeholder = "Drag your png image or Browse",
+    helper,
+    secondaryLabel,
+    accept = "image/*",
+  }: {
+    label: string;
+    name: string;
+    placeholder?: string;
+    helper?: string;
+    secondaryLabel?: string;
+    accept?: string;
+  }) => {
+    const displayText = secondaryLabel
+      ? `${secondaryLabel} · ${placeholder}`
+      : placeholder;
+    const file = formState[name];
+    const inputRef = useRef<HTMLInputElement>(null);
+    const fileLabel = file instanceof File ? file.name : displayText;
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-xs font-semibold text-[color:var(--console-muted)]">
+          <span>{label}</span>
+          {helper ? (
+            <span className="text-[11px] font-normal text-[color:var(--console-muted)]">
+              {helper}
+            </span>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="w-full rounded-2xl border border-dashed border-[color:var(--console-border)] bg-white/70 px-4 py-3 text-left text-sm text-[color:var(--console-muted)] hover:border-[var(--console-accent)] hover:text-[color:var(--console-text)]"
+        >
+          {fileLabel}
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={(event) => {
+            const selectedFile = event.target.files?.[0];
+            if (selectedFile) {
+              updateField(name, selectedFile);
+            }
+          }}
+        />
+      </div>
+    );
+  };
+
+  const TextField = ({
+    label,
+    name,
+    placeholder,
+    rightAdornment,
+    multiline,
+  }: {
+    label: string;
+    name: string;
+    placeholder?: string;
+    rightAdornment?: ReactNode;
+    multiline?: boolean;
+  }) => {
+    const value = getTextValue(name);
+    const InputTag = multiline ? "textarea" : "input";
+    return (
+      <label className="flex flex-col gap-2">
+        <span className="text-xs font-semibold text-[color:var(--console-muted)]">
+          {label}
+        </span>
+        <div className="flex items-start gap-2">
+          <InputTag
+            className={`console-input ${multiline ? "min-h-[90px]" : "flex-1"}`}
+            placeholder={placeholder}
+            value={value}
+            onChange={(event) => updateField(name, event.target.value)}
+          />
+          {rightAdornment}
+        </div>
+      </label>
+    );
+  };
+
+  const AddMoreLink = ({ label }: { label: string }) => (
+    <button
+      type="button"
+      className="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--console-accent)]"
+    >
+      <Plus className="h-4 w-4" />
+      {label}
+    </button>
+  );
+
+  const colorFields = [
+    { label: "Background Color", name: "color_background", swatch: "#f6f8ff" },
+    { label: "Accent Text Color", name: "color_accentText", swatch: "#1776FF" },
+    { label: "Color of icons", name: "color_icon", swatch: "#206c65" },
+    { label: "Primary Main Color", name: "color_primary", swatch: "#2a6dc5" },
+    { label: "Info button color", name: "color_infoButton", swatch: "#000000" },
+    { label: "Color of information Boxes", name: "color_infoBox", swatch: "#f1f3f7" },
+    { label: "Secondary Color", name: "color_secondary", swatch: "#90949c" },
+  ];
+
+  const handleSubmit = async (mode: "save" | "preview" | "publish") => {
+    setIsSubmitting(true);
+    try {
+      const payload = new FormData();
+      payload.append("mode", mode);
+      if (projectId) {
+        payload.append("projectId", projectId);
+      }
+      Object.entries(formState).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        if (value instanceof File) {
+          payload.append(key, value);
+        } else {
+          payload.append(key, String(value));
+        }
+      });
+
+      const endpoint = projectId
+        ? `/api/projects/${projectId}/portal`
+        : "/api/portal";
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: payload,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save portal data");
+      }
+    } catch (error) {
+      console.error("Error saving portal data:", error);
+      alert("Failed to save portal data. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const renderMediaTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader
+        title="Edit media files"
+        subtitle="Upload your brand assets, hero imagery, and gallery items."
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <UploadField label="Brand logotype dark mode" name="brandLogoDark" />
+        <UploadField label="Brand logotype light mode" name="brandLogoLight" />
+        <UploadField
+          label="Favicon"
+          name="favicon"
+          placeholder="Drag your .ico icon or Browse"
+          accept=".ico,image/x-icon"
+        />
+        <UploadField label="Hero section image" name="heroImage" />
+        <UploadField label="Mobile logotype" name="mobileLogo" />
+        <UploadField label="Upload your Wallpaper" name="wallpaper" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <UploadField
+          label="Whitepaper"
+          name="whitepaper"
+          placeholder="Drag your PDF or Browse"
+          helper="Upload the latest version for investors."
+          accept="application/pdf"
+        />
+        <UploadField
+          label="Whitepaper section image"
+          name="whitepaperSectionImage"
+          placeholder="Drag your png image or Browse"
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-4">
+          <UploadField
+            label="Image gallery (max. 10)"
+            name="galleryImage1"
+            secondaryLabel="Image 1"
+          />
+          <AddMoreLink label="Add one more" />
+        </div>
+        <div className="space-y-4">
+          <UploadField label="Partner logotype 1" name="partnerLogo1" />
+          <AddMoreLink label="Add one more" />
+        </div>
+      </div>
+    </Panel>
+  );
+
+  const renderSectionsTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader
+        title="Sections"
+        subtitle="Choose which sections appear and prefill their content."
+      />
+
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <InlineToggleRow label="Partners" name="sections_partners" />
+        <InlineToggleRow label="Digital asset rights" name="sections_rights" />
+        <InlineToggleRow label="Reasons to invest" name="sections_reasons" />
+        <InlineToggleRow label="Road map" name="sections_roadmap" />
+        <InlineToggleRow label="Press section" name="sections_press" />
+        <InlineToggleRow label="FAQs" name="sections_faqs" />
+        <InlineToggleRow label="Offering" name="sections_offering" />
+        <InlineToggleRow label="Image carousel" name="sections_carousel" />
+        <InlineToggleRow label="Whitepaper" name="sections_whitepaper" />
+        <InlineToggleRow label="Highlights" name="sections_highlights" />
+        <InlineToggleRow label="Team" name="sections_team" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="console-card console-card-strong space-y-3 p-4">
+          <TextField
+            label="Hero section heading"
+            name="heroHeading"
+            placeholder="Welcome to your investment portal"
+          />
+          <TextField
+            label="Hero section description"
+            name="heroDescription"
+            placeholder="Brief introduction for investors"
+            multiline
+          />
+          <TextField
+            label="Project video (YouTube URL)"
+            name="projectVideo"
+            placeholder="https://youtube.com/..."
+          />
+        </div>
+        <div className="console-card console-card-strong space-y-3 p-4">
+          <TextField
+            label="Whitepaper custom title"
+            name="whitepaperTitle"
+            placeholder="Whitepaper"
+          />
+          <TextField
+            label="Whitepaper summary"
+            name="whitepaperSummary"
+            placeholder="Short summary of the document"
+            multiline
+          />
+          <TextField
+            label="Whitepaper download button text"
+            name="whitepaperCta"
+            placeholder="Download whitepaper"
+          />
+        </div>
+      </div>
+    </Panel>
+  );
+
+  const renderTeamTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader
+        title="Team Editor"
+        subtitle="Showcase the core team working on the project."
+      />
+
+      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase text-[color:var(--console-muted)]">
+        <span className="console-tab console-tab-active">English</span>
+      </div>
+
+      <div className="console-card console-card-strong space-y-4 p-4">
+        <p className="text-xs font-semibold text-[color:var(--console-muted)]">
+          Team member 1
+        </p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <UploadField label="Photo" name="team1Photo" />
+          <TextField label="Position" name="team1Position" placeholder="Enter role" />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <TextField label="Name" name="team1Name" placeholder="Enter full name" />
+          <TextField label="Social URL" name="team1Social" placeholder="https://" />
+        </div>
+        <TextField label="Biography" name="team1Bio" placeholder="Short bio" multiline />
+      </div>
+
+      <AddMoreLink label="Add one more team member" />
+    </Panel>
+  );
+
+  const renderColorsTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader
+        title="Colors"
+        subtitle="Define brand palette for your investment portal."
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {colorFields.map((color) => (
+          <div
+            key={color.label}
+            className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/70 p-3"
+          >
+            <span
+              className="h-10 w-10 rounded-xl border border-white/80 shadow-inner"
+              style={{ backgroundColor: color.swatch }}
+            />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-[color:var(--console-muted)]">
+                {color.label}
+              </p>
+              <input
+                className="console-input mt-1 w-full"
+                value={getTextValue(color.name)}
+                onChange={(event) => updateField(color.name, event.target.value)}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between rounded-2xl border border-white/70 bg-white/70 px-4 py-3">
+        <div>
+          <p className="text-xs font-semibold text-[color:var(--console-text)]">
+            Select Default Theme
+          </p>
+          <p className="text-[11px] text-[color:var(--console-muted)]">
+            Choose which palette loads first in your portal.
+          </p>
+        </div>
+        <SwitchControl on onToggle={() => updateField("color_themeDefault", true)} />
+      </div>
+    </Panel>
+  );
+
+  const renderContactTab = () => {
+    const channels = [
+      { label: "Discord", name: "channel_discord" },
+      { label: "Instagram", name: "channel_instagram" },
+      { label: "LinkedIn", name: "channel_linkedin" },
+      { label: "Telegram", name: "channel_telegram" },
+      { label: "Facebook", name: "channel_facebook" },
+      { label: "Email", name: "channel_email" },
+      { label: "Twitter", name: "channel_twitter" },
+      { label: "Slack", name: "channel_slack" },
+    ];
+
+    return (
+      <Panel className="p-6 space-y-6">
+        <SectionHeader
+          title="Community channels"
+          subtitle="Maximum of 4 icons will be displayed at one time."
+        />
+
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {channels.map((channel) => (
+            <TextField
+              key={channel.name}
+              label={channel.label}
+              name={channel.name}
+              placeholder={`Add ${channel.label} link`}
+            />
+          ))}
+        </div>
+
+        <div className="console-card console-card-strong p-4">
+          <p className="text-sm font-semibold text-[color:var(--console-text)]">
+            Contact information
+          </p>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <TextField label="Email" name="contactEmail" placeholder="contact@company.com" />
+            <TextField label="Phone number" name="contactPhone" placeholder="+00 000 000" />
+            <TextField
+              label="Address"
+              name="contactAddress"
+              placeholder="Street, City, Country"
+            />
+          </div>
+        </div>
+      </Panel>
+    );
+  };
+
+  const renderReportsTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader
+        title="Reporting files"
+        subtitle="Upload investor-facing documents."
+      />
+
+      <div className="console-card console-card-strong space-y-4 p-4">
+        <div className="grid items-end gap-4 lg:grid-cols-[2fr_1fr_auto]">
+          <UploadField
+            label="Upload report"
+            name="reportFile"
+            placeholder="Drag your PDF or Browse"
+            accept="application/pdf"
+          />
+          <TextField label="Name" name="reportName" placeholder="Quarterly update" />
+          <ConsoleButton
+            label="Upload"
+            variant="primary"
+            className="px-4 py-2 text-sm"
+            onClick={() => handleSubmit("save")}
+          />
+        </div>
+      </div>
+    </Panel>
+  );
+
+  const renderSeoTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader title="SEO investment portal" subtitle="Website's configuration" />
+      <div className="console-card console-card-strong p-4">
+        <div className="grid gap-3 lg:grid-cols-4">
+          <TextField label="Title" name="seoTitle" placeholder="Page title" />
+          <TextField label="Description" name="seoDescription" placeholder="Meta description" />
+          <TextField label="Keywords" name="seoKeywords" placeholder="Keyword list" />
+          <TextField label="GTM id" name="seoGtmId" placeholder="GTM-XXXX" />
+        </div>
+      </div>
+    </Panel>
+  );
+
+  const renderTransferTab = () => {
+    const renderCryptoFields = () => (
+      <div className="console-card console-card-strong space-y-4 p-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <TextField label="Network" name="cryptoNetwork" placeholder="Select network" />
+            <p className="mt-1 text-[11px] text-rose-500">Network is required</p>
+          </div>
+          <div>
+            <TextField label="Wallet" name="cryptoWallet" placeholder="Choose wallet" />
+            <p className="mt-1 text-[11px] text-rose-500">
+              Pre-minting required steps
+            </p>
+          </div>
+        </div>
+        <TextField label="Payment Token" name="cryptoPaymentToken" placeholder="Select token" />
+        <AddMoreLink label="Add one more crypto transfer details" />
+      </div>
+    );
+
+    const renderBankFields = () => (
+      <div className="console-card console-card-strong space-y-4 p-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <TextField label="Bank name" name="bankName" placeholder="Enter bank name" />
+          <TextField label="Account holder" name="bankAccountHolder" placeholder="Enter account name" />
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <TextField
+            label="IBAN / Account number"
+            name="bankIban"
+            placeholder="0000 0000 0000"
+          />
+          <TextField label="SWIFT / BIC" name="bankSwift" placeholder="XXXXXX" />
+        </div>
+        <TextField
+          label="Payment reference"
+          name="bankPaymentReference"
+          placeholder="Reference for transfers"
+        />
+      </div>
+    );
+
+    return (
+      <Panel className="p-6 space-y-4">
+        <SectionHeader
+          title="Transfer"
+          subtitle="Configure how investors will send funds."
+        />
+
+        <div className="flex flex-wrap gap-3">
+          {[
+            { id: "bank", label: "Bank" },
+            { id: "crypto", label: "Crypto" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setTransferTab(tab.id as "bank" | "crypto")}
+              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                transferTab === tab.id
+                  ? "border-[var(--console-accent)] bg-white/90 text-[color:var(--console-text)]"
+                  : "border-white/60 bg-white/50 text-[color:var(--console-muted)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {transferTab === "bank" ? renderBankFields() : renderCryptoFields()}
+      </Panel>
+    );
+  };
+
+  const renderFaqsTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader
+        title="Frequently Asked Questions"
+        subtitle="Build FAQ content for your portal."
+      />
+
+      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase text-[color:var(--console-muted)]">
+        <span className="console-tab console-tab-active">English</span>
+      </div>
+
+      <div className="console-card console-card-strong space-y-4 p-4">
+        <TextField
+          label="Custom Section Title"
+          name="faqSectionTitle"
+          placeholder="Frequently Asked Questions"
+        />
+        <div className="space-y-2 rounded-2xl border border-white/70 bg-white/70 p-4">
+          <p className="text-xs font-semibold text-[color:var(--console-muted)]">
+            FAQ 1
+          </p>
+          <TextField label="Title" name="faq1Title" placeholder="Add title" />
+          <TextField label="Content" name="faq1Content" placeholder="Add content" multiline />
+        </div>
+        <AddMoreLink label="Add one more" />
+      </div>
+    </Panel>
+  );
+
+  const renderHighlightsTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader
+        title="Highlights"
+        subtitle="Showcase cards and phrases that summarize your project."
+      />
+
+      <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase text-[color:var(--console-muted)]">
+        <span className="console-tab console-tab-active">English</span>
+      </div>
+
+      <div className="console-card console-card-strong space-y-4 p-4">
+        <TextField label="Custom Section Title" name="highlightSectionTitle" placeholder="Highlights" />
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-2 rounded-2xl border border-white/70 bg-white/70 p-4">
+            <p className="text-xs font-semibold text-[color:var(--console-muted)]">
+              Highlight card 1
+            </p>
+            <TextField label="Title" name="highlightCard1Title" placeholder="Add title" />
+            <TextField label="Content" name="highlightCard1Content" placeholder="Add content" multiline />
+            <AddMoreLink label="Add one more" />
+          </div>
+          <div className="space-y-2 rounded-2xl border border-white/70 bg-white/70 p-4">
+            <p className="text-xs font-semibold text-[color:var(--console-muted)]">
+              Highlight phrase 1
+            </p>
+            <TextField label="Content" name="highlightPhrase1Content" placeholder="Add phrase" multiline />
+            <AddMoreLink label="Add one more" />
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+
+  const renderPressTab = () => (
+    <Panel className="p-6 space-y-6">
+      <SectionHeader title="Press section" subtitle="Add Press (max. 12)" />
+
+      <div className="console-card console-card-strong space-y-4 p-4">
+        <div className="space-y-3 rounded-2xl border border-white/70 bg-white/70 p-4">
+          <p className="text-xs font-semibold text-[color:var(--console-muted)]">
+            Article 1
+          </p>
+          <TextField label="URL" name="pressArticle1Url" placeholder="https://example.com" />
+          <div className="flex flex-wrap gap-3">
+            <ConsoleButton
+              label="Preview"
+              variant="primary"
+              className="px-4 py-2 text-sm"
+            />
+          </div>
+        </div>
+        <AddMoreLink label="Add one more" />
+      </div>
+    </Panel>
+  );
+
+  const renderOfferingsTab = () => {
+    const rights = [
+      { label: "Drag-Along Right", name: "right_dragAlong" },
+      { label: "Tag Along Right", name: "right_tagAlong" },
+      { label: "Voting Right", name: "right_voting" },
+      { label: "Attend General Meeting Right", name: "right_meeting" },
+      { label: "Information Obligation", name: "right_information" },
+    ];
+
+    return (
+      <Panel className="p-6 space-y-6">
+        <SectionHeader
+          title="Offerings"
+          subtitle="Configure offering information, rights, and states."
+        />
+
+        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+          <div className="console-card console-card-strong space-y-3 p-4">
+            <TextField label="Select a country" name="offeringCountry" placeholder="Select a country" />
+            <TextField
+              label="APY (Annual Percentage Yield)"
+              name="offeringApy"
+              placeholder="0.0"
+              rightAdornment={
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-[color:var(--console-muted)]">
+                    Show APY
+                  </span>
+                  <SwitchControl
+                    on={Boolean(formState.showApy)}
+                    onToggle={() => updateField("showApy", !formState.showApy)}
+                  />
+                </div>
+              }
+            />
+            <TextField
+              label="Previously Amount Raised"
+              name="offeringAmountRaised"
+              placeholder="0.0"
+              rightAdornment={
+                <span className="rounded-xl bg-white/80 px-3 py-2 text-xs font-semibold text-[color:var(--console-muted)]">
+                  USDT
+                </span>
+              }
+            />
+          </div>
+
+          <div className="console-card console-card-strong space-y-3 p-4">
+            <p className="text-sm font-semibold text-[color:var(--console-text)]">
+              Digital Asset Rights
+            </p>
+            <p className="text-xs text-[color:var(--console-muted)]">
+              Select the valid rights for your digital assets
+            </p>
+            {rights.map((right) => (
+              <InlineToggleRow
+                key={right.name}
+                label={right.label}
+                name={right.name}
+                dangerWhenOff
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="console-card console-card-strong space-y-4 p-4">
+          <TextField
+            label="Digital Asset Resume"
+            name="offeringResume"
+            placeholder="Summarize your digital asset"
+            multiline
+          />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="console-card console-card-strong space-y-3 p-4">
+            <p className="text-sm font-semibold text-[color:var(--console-text)]">
+              Empty Offering
+            </p>
+            <TextField label="Title" name="emptyOfferingTitle" placeholder="Title" />
+            <TextField label="Content" name="emptyOfferingContent" placeholder="Content" multiline />
+          </div>
+
+          <div className="console-card console-card-strong space-y-3 p-4">
+            <p className="text-sm font-semibold text-[color:var(--console-text)]">
+              Scheduled Offering
+            </p>
+            <TextField label="Title" name="scheduledOfferingTitle" placeholder="Title" />
+            <TextField label="Content" name="scheduledOfferingContent" placeholder="Content" multiline />
+            <TextField label="Button Text" name="scheduledOfferingButtonText" placeholder="Button text" />
+            <TextField label="Counter Text" name="scheduledOfferingCounterText" placeholder="Counter text" />
+            <div className="flex items-center justify-between rounded-2xl border border-white/70 bg-white/70 px-4 py-3">
+              <span className="text-xs font-semibold text-[color:var(--console-muted)]">
+                Show Scheduled Counter
+              </span>
+              <SwitchControl
+                on={Boolean(formState.showScheduledCounter)}
+                onToggle={() =>
+                  updateField("showScheduledCounter", !formState.showScheduledCounter)
+                }
+              />
+            </div>
+          </div>
+
+          <div className="console-card console-card-strong space-y-3 p-4">
+            <p className="text-sm font-semibold text-[color:var(--console-text)]">
+              Active Offering
+            </p>
+            <TextField label="Title" name="activeOfferingTitle" placeholder="Title" />
+            <TextField label="Content" name="activeOfferingContent" placeholder="Content" multiline />
+            <TextField label="Button Text" name="activeOfferingButtonText" placeholder="Button text" />
+            <TextField label="Counter Text" name="activeOfferingCounterText" placeholder="Counter text" />
+            <div className="flex items-center justify-between rounded-2xl border border-white/70 bg-white/70 px-4 py-3">
+              <span className="text-xs font-semibold text-[color:var(--console-muted)]">
+                Show Active Counter
+              </span>
+              <SwitchControl
+                on={Boolean(formState.showActiveCounter)}
+                onToggle={() => updateField("showActiveCounter", !formState.showActiveCounter)}
+              />
+            </div>
+          </div>
+        </div>
+      </Panel>
+    );
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "media":
+        return renderMediaTab();
+      case "sections":
+        return renderSectionsTab();
+      case "team":
+        return renderTeamTab();
+      case "colors":
+        return renderColorsTab();
+      case "contact":
+        return renderContactTab();
+      case "reports":
+        return renderReportsTab();
+      case "seo":
+        return renderSeoTab();
+      case "transfer":
+        return renderTransferTab();
+      case "faqs":
+        return renderFaqsTab();
+      case "highlights":
+        return renderHighlightsTab();
+      case "press":
+        return renderPressTab();
+      case "offerings":
+        return renderOfferingsTab();
+      default:
+        return renderMediaTab();
+    }
+  };
 
   return (
     <section className="space-y-6">
       <Stagger index={0}>
         <Panel className="p-4">
-          <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase text-[color:var(--console-muted)]">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                className={`console-tab ${
-                  tab === "Sections" ? "console-tab-active" : ""
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </Panel>
-      </Stagger>
-
-      <Stagger index={1}>
-        <Panel className="p-6">
-          <div>
-            <p className="text-sm font-semibold text-[color:var(--console-text)]">
-              Sections display
-            </p>
-            <p className="text-xs text-[color:var(--console-muted)]">
-              Sections visibility
-            </p>
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <ToggleRow label="Partners" enabled />
-            <ToggleRow label="Digital asset rights" />
-            <ToggleRow label="Reasons to invest" enabled />
-            <ToggleRow label="Road map" enabled />
-            <ToggleRow label="Press section" />
-            <ToggleRow label="FAQs" />
-            <ToggleRow label="Offering" enabled />
-            <ToggleRow label="Image carousel" />
-            <ToggleRow label="Whitepaper" enabled />
-            <ToggleRow label="Highlights" enabled />
-            <ToggleRow label="Team" enabled />
-          </div>
-        </Panel>
-      </Stagger>
-
-      <Stagger index={2}>
-        <Panel className="p-6">
-          <div className="mt-4 grid gap-4">
-            <FormField label="Hero section heading" />
-            <FormField label="Hero section description" />
-            <FormField label="Whitepaper custom title" />
-            <FormField label="Whitepaper summary" />
-            <FormField label="Whitepaper download button text" />
-            <FormField label="Project video (YouTube URL)" />
-          </div>
-        </Panel>
-      </Stagger>
-
-      <Stagger index={3}>
-        <Panel className="p-6">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="console-card console-card-strong p-4">
-              <p className="text-sm font-semibold text-[color:var(--console-text)]">
-                Reasons to invest
-              </p>
-              <FormField label="Custom section title" />
-              {["Reason 1", "Reason 2"].map((reason) => (
-                <div key={reason} className="mt-3">
-                  <p className="text-xs font-semibold text-[color:var(--console-muted)]">
-                    {reason}
-                  </p>
-                  <div className="mt-2 grid gap-2">
-                    <FormField label="Title" />
-                    <FormField label="Content" />
-                  </div>
-                </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase text-[color:var(--console-muted)]">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`console-tab ${
+                    activeTab === tab.id ? "console-tab-active" : ""
+                  }`}
+                >
+                  {tab.label}
+                </button>
               ))}
             </div>
-            <div className="console-card console-card-strong p-4">
-              <p className="text-sm font-semibold text-[color:var(--console-text)]">
-                Road map
-              </p>
-              <FormField label="Custom section title" />
-              {["Milestone 1", "Milestone 2"].map((milestone) => (
-                <div key={milestone} className="mt-3">
-                  <p className="text-xs font-semibold text-[color:var(--console-muted)]">
-                    {milestone}
-                  </p>
-                  <div className="mt-2 grid gap-2">
-                    <FormField label="Title" />
-                    <FormField label="Content" />
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <ConsoleButton
+                label={isSubmitting ? "Saving..." : "Preview"}
+                variant="outline"
+                className="px-3 py-2 text-xs"
+                onClick={() => handleSubmit("preview")}
+              />
+              <ConsoleButton
+                label={isSubmitting ? "Saving..." : "Publish"}
+                variant="primary"
+                className="px-3 py-2 text-xs"
+                onClick={() => handleSubmit("publish")}
+              />
             </div>
           </div>
         </Panel>
       </Stagger>
+
+      <Stagger index={1}>{renderTabContent()}</Stagger>
     </section>
   );
 }
@@ -1941,7 +2712,7 @@ export default function ConsoleShell() {
           />
         );
       case "edit-portal":
-        return <EditPortalSection />;
+        return <EditPortalSection projectId={projectId || undefined} />;
       default:
         return null;
     }

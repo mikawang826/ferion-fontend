@@ -26,13 +26,13 @@ export default function Home() {
       const data = await res.json().catch(() => ({}));
       setLoading(false);
       if (!res.ok) {
-        setError(data?.error ?? "登录失败，请稍后再试");
+        setError(data?.error ?? "Login failed, please try again");
         return;
       }
       router.push("/dashboard");
     } catch (err) {
       console.error(err);
-      setError("登录失败，请稍后再试");
+      setError("Login failed, please try again");
       setLoading(false);
     }
   };
@@ -56,13 +56,13 @@ export default function Home() {
       const data = await res.json().catch(() => ({}));
       setLoading(false);
       if (!res.ok) {
-        setError(data?.error ?? "注册失败，请稍后再试");
+        setError(data?.error ?? "Registration failed, please try again");
         return;
       }
       router.push("/dashboard");
     } catch (err) {
       console.error(err);
-      setError("注册失败，请稍后再试");
+      setError("Registration failed, please try again");
       setLoading(false);
     }
   };
@@ -81,19 +81,19 @@ export default function Home() {
             <p className="text-sm font-semibold uppercase tracking-wide">
               Ferion TaaS Platform
             </p>
-            <h1 className="mt-3 text-3xl font-bold">欢迎来到 Ferion</h1>
+            <h1 className="mt-3 text-3xl font-bold">Welcome to Ferion</h1>
             <p className="mt-3 text-orange-50/90">
-              登录后进入控制台，创建和管理你的 RWA 项目。
+            Log in to enter the console and create/manage your RWA projects.
             </p>
             <div className="mt-8 space-y-3 text-sm">
               <div className="rounded-2xl bg-white/15 px-4 py-3">
-                结构化创建项目草案
+              Create structured project drafts.
               </div>
               <div className="rounded-2xl bg-white/15 px-4 py-3">
-                邀请 Legal / Fund Admin / Auditor 协作
+              Invite Legal / Admin & Ops / Auditor to collaborate.
               </div>
               <div className="rounded-2xl bg-white/15 px-4 py-3">
-                在一个控制台查看进度与资产
+              View progress and assets in a single console.
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ export default function Home() {
                     : "text-slate-600"
                 }`}
               >
-                登录
+                Login
               </button>
               <button
                 type="button"
@@ -129,7 +129,7 @@ export default function Home() {
                     : "text-slate-600"
                 }`}
               >
-                注册
+                Register
               </button>
             </div>
 
@@ -140,26 +140,26 @@ export default function Home() {
               {!isLogin && (
                 <>
                   <div className="space-y-2">
-                    <label className="block text-sm text-slate-700">姓名</label>
+                    <label className="block text-sm text-slate-700">Full name</label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full rounded-xl border border-white/60 bg-white/80 px-4 py-3 text-slate-900 shadow-inner outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                      placeholder="张三"
+                      placeholder="John Doe"
                       required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="block text-sm text-slate-700">
-                      企业名称
+                      Enterprise name
                     </label>
                     <input
                       type="text"
                       value={enterpriseName}
                       onChange={(e) => setEnterpriseName(e.target.value)}
                       className="w-full rounded-xl border border-white/60 bg-white/80 px-4 py-3 text-slate-900 shadow-inner outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                      placeholder="你的公司/机构名称"
+                      placeholder="Your company/institution name"
                       required
                     />
                   </div>
@@ -167,7 +167,7 @@ export default function Home() {
               )}
 
               <div className="space-y-2">
-                <label className="block text-sm text-slate-700">邮箱</label>
+                <label className="block text-sm text-slate-700">Email</label>
                 <input
                   type="email"
                   value={email}
@@ -178,13 +178,13 @@ export default function Home() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm text-slate-700">密码</label>
+                <label className="block text-sm text-slate-700">Password</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-xl border border-white/60 bg-white/80 px-4 py-3 text-slate-900 shadow-inner outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                  placeholder="请输入密码"
+                  placeholder="Enter your password"
                   required
                 />
               </div>
@@ -200,7 +200,7 @@ export default function Home() {
                 disabled={loading}
                 className="w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {loading ? "请稍候..." : isLogin ? "登录" : "注册并进入控制台"}
+                {loading ? "Please wait..." : isLogin ? "Login" : "Register and enter the console"}
               </button>
             </form>
             </div>

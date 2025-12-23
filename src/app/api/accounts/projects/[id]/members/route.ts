@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { getProjectForEnterprise } from "@/lib/projects";
 import { prisma } from "@/lib/prisma";
+import { PROJECT_ROLE_CODES } from "@/lib/projectRoles";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -10,7 +11,12 @@ type Params = {
 
 const memberSchema = z.object({
   userId: z.string().min(1, "userId is required"),
-  role: z.string().min(1, "Role is required"),
+  role: z.enum(PROJECT_ROLE_CODES, {
+    errorMap: () => ({
+      message:
+        "Role must be one of: CREATOR, LEGAL, ADMIN_OPS, AUDITOR.",
+    }),
+  }),
 });
 
 export async function GET(_req: NextRequest, { params }: Params) {

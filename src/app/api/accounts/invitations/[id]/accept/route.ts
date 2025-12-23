@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isProjectRole } from "@/lib/projectRoles";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -40,6 +41,13 @@ export async function POST(_req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: "Invitation does not belong to your enterprise" },
         { status: 403 },
+      );
+    }
+
+    if (!isProjectRole(invitation.role)) {
+      return NextResponse.json(
+        { error: "Invitation role is invalid" },
+        { status: 400 },
       );
     }
 
