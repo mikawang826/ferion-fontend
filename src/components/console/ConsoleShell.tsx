@@ -71,6 +71,10 @@ type SecondaryGroup = {
   items: SecondaryItem[];
 };
 
+type ConsoleShellProps = {
+  userName?: string;
+};
+
 type InvitationRecord = {
   id: string;
   email: string;
@@ -456,7 +460,7 @@ function FilterInput({
         />
         <input
           className={`console-input ${inputClassName} ${
-            iconLeft ? "pl-9" : "pr-8"
+            iconLeft ? "console-input-icon-left" : "console-input-icon-right"
           }`}
           placeholder={placeholder}
           readOnly
@@ -780,7 +784,7 @@ function OverviewDigitalAssetsSection() {
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-36 pl-9"
+                className="console-input console-input-icon-left w-36"
                 placeholder="YYYY/MM/DD"
                 readOnly
               />
@@ -788,7 +792,7 @@ function OverviewDigitalAssetsSection() {
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-40 pl-9"
+                className="console-input console-input-icon-left w-40"
                 placeholder="All chains"
                 readOnly
               />
@@ -796,7 +800,7 @@ function OverviewDigitalAssetsSection() {
             <div className="relative">
               <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-32 pr-8"
+                className="console-input console-input-icon-right w-32"
                 placeholder="Newest"
                 readOnly
               />
@@ -804,7 +808,7 @@ function OverviewDigitalAssetsSection() {
             <div className="relative min-w-[180px] flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-full pl-9"
+                className="console-input console-input-icon-left w-full"
                 placeholder="Search"
                 readOnly
               />
@@ -1489,7 +1493,7 @@ function TransfersSection() {
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-36 pl-9"
+                className="console-input console-input-icon-left w-36"
                 placeholder="2025/12/01"
                 readOnly
               />
@@ -1497,7 +1501,7 @@ function TransfersSection() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-48 pl-9"
+                className="console-input console-input-icon-left w-48"
                 placeholder="Search by email"
                 readOnly
               />
@@ -1505,7 +1509,7 @@ function TransfersSection() {
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-32 pl-9"
+                className="console-input console-input-icon-left w-32"
                 placeholder="Filter"
                 readOnly
               />
@@ -1513,7 +1517,7 @@ function TransfersSection() {
             <div className="relative">
               <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-32 pr-8"
+                className="console-input console-input-icon-right w-32"
                 placeholder="Oldest"
                 readOnly
               />
@@ -1551,7 +1555,7 @@ function WhitelistSection() {
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-36 pl-9"
+                className="console-input console-input-icon-left w-36"
                 placeholder="2025/12/07"
                 readOnly
               />
@@ -1559,7 +1563,7 @@ function WhitelistSection() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-48 pl-9"
+                className="console-input console-input-icon-left w-48"
                 placeholder="Search by email"
                 readOnly
               />
@@ -1567,7 +1571,7 @@ function WhitelistSection() {
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-32 pl-9"
+                className="console-input console-input-icon-left w-32"
                 placeholder="Filter"
                 readOnly
               />
@@ -1575,7 +1579,7 @@ function WhitelistSection() {
             <div className="relative">
               <ChevronDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--console-muted)]" />
               <input
-                className="console-input w-32 pr-8"
+                className="console-input console-input-icon-right w-32"
                 placeholder="Newest"
                 readOnly
               />
@@ -1640,6 +1644,12 @@ type PortalInfo = {
   publishedBy: string;
   publishedAt: string;
   state: PortalState;
+};
+
+type EditPortalHeaderActions = {
+  isSubmitting: boolean;
+  onPreview: () => void;
+  onPublish: () => void;
 };
 
 function InvestmentPortalSection({
@@ -1864,7 +1874,13 @@ function InvestmentPortalSection({
   );
 }
 
-function EditPortalSection({ projectId }: { projectId?: string }) {
+function EditPortalSection({
+  projectId,
+  setHeaderActions,
+}: {
+  projectId?: string;
+  setHeaderActions: (actions: EditPortalHeaderActions | null) => void;
+}) {
   type PortalFormState = Record<
     string,
     string | boolean | File | null | undefined
@@ -1910,6 +1926,9 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
   });
   const [galleryImages, setGalleryImages] = useState<(File | null)[]>([null]);
   const [partnerLogos, setPartnerLogos] = useState<(File | null)[]>([null]);
+  const submitRef = useRef<(mode: "save" | "preview" | "publish") => void>(
+    () => {},
+  );
 
   const addGallerySlot = () => {
     if (galleryImages.length >= MAX_MEDIA_ITEMS) return;
@@ -1921,7 +1940,7 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     setPartnerLogos((prev) => [...prev, null]);
   };
 
-  const updateGalleryFile = (index: number, file: File) => {
+  const updateGalleryFile = (index: number, file: File | null) => {
     setGalleryImages((prev) => {
       const next = [...prev];
       next[index] = file;
@@ -1929,7 +1948,7 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     });
   };
 
-  const updatePartnerLogoFile = (index: number, file: File) => {
+  const updatePartnerLogoFile = (index: number, file: File | null) => {
     setPartnerLogos((prev) => {
       const next = [...prev];
       next[index] = file;
@@ -1963,6 +1982,15 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     </div>
   );
 
+  const formatFileSize = (bytes: number) => {
+    if (!Number.isFinite(bytes)) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(1)} MB`;
+  };
+
   const SwitchControl = ({
     on = false,
     dangerWhenOff,
@@ -1975,17 +2003,17 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     <button
       type="button"
       onClick={onToggle}
-      className={`flex h-5 w-10 items-center rounded-full p-0.5 transition ${
+      className={`flex h-5 w-10 items-center rounded-full p-0.5 transition-colors transition-shadow duration-300 ease-in-out active:scale-[0.98] ${
         on
           ? "bg-[var(--console-accent)] shadow-sm"
           : dangerWhenOff
             ? "bg-rose-300"
-            : "bg-slate-300"
-      }`}
+            : "bg-slate-200"
+      } ${!on && !dangerWhenOff ? "console-switch-off" : ""}`}
       aria-pressed={on}
     >
       <span
-        className={`h-4 w-4 rounded-full bg-white shadow transition ${
+        className={`h-4 w-4 rounded-full bg-white shadow transition-transform duration-300 ease-in-out transform-gpu ${
           on ? "translate-x-5" : "translate-x-0"
         }`}
       />
@@ -2005,15 +2033,15 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     const baseOff =
       dangerWhenOff
         ? "bg-rose-50 border-rose-200 text-rose-500"
-        : "bg-slate-100 border-slate-300 text-slate-400";
+        : "bg-slate-50 border-slate-200 text-slate-400";
     const baseOn =
       "bg-white/90 border-white/80 shadow-sm text-[color:var(--console-text)]";
 
     return (
       <div
-        className={`flex items-center justify-between rounded-2xl px-4 py-3 ${
+        className={`flex items-center justify-between rounded-2xl px-4 py-3 transition-colors transition-shadow duration-300 ease-in-out ${
           isOn ? baseOn : `${baseOff} border-dashed`
-        }`}
+        } ${!isOn && !dangerWhenOff ? "console-toggle-off" : ""}`}
       >
         <span
           className={`text-sm font-medium ${
@@ -2036,19 +2064,21 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     name,
     value,
     onFileChange,
-    placeholder = "Drag your png image or Browse",
+    placeholder = "Drag files here, or click to select",
     helper,
     secondaryLabel,
     accept = "image/*",
+    maxSizeMb,
   }: {
     label: string;
     name: string;
     value?: File | null;
-    onFileChange?: (file: File) => void;
+    onFileChange?: (file: File | null) => void;
     placeholder?: string;
     helper?: string;
     secondaryLabel?: string;
     accept?: string;
+    maxSizeMb?: number;
   }) => {
     const displayText = secondaryLabel
       ? `${secondaryLabel} · ${placeholder}`
@@ -2056,6 +2086,74 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     const file = value !== undefined ? value : formState[name];
     const inputRef = useRef<HTMLInputElement>(null);
     const fileLabel = file instanceof File ? file.name : displayText;
+    const [isDragging, setIsDragging] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const acceptHint =
+      accept && accept !== "*/*" ? `Accepted: ${accept}` : null;
+
+    useEffect(() => {
+      if (file instanceof File && file.type.startsWith("image/")) {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+        return () => URL.revokeObjectURL(url);
+      }
+      setPreviewUrl(null);
+      return undefined;
+    }, [file]);
+
+    const isFileAccepted = (candidate: File) => {
+      if (!accept || accept === "*/*") return true;
+      const tokens = accept
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean);
+      if (!tokens.length) return true;
+      return tokens.some((token) => {
+        if (token === "*/*") return true;
+        if (token.endsWith("/*")) {
+          return candidate.type.startsWith(token.slice(0, -1));
+        }
+        if (token.startsWith(".")) {
+          return candidate.name.toLowerCase().endsWith(token.toLowerCase());
+        }
+        return candidate.type === token;
+      });
+    };
+
+    const handleFile = (nextFile: File | null) => {
+      if (!nextFile) return;
+      if (!isFileAccepted(nextFile)) {
+        setError("Unsupported file type.");
+        return;
+      }
+      if (maxSizeMb && nextFile.size > maxSizeMb * 1024 * 1024) {
+        setError(`File is larger than ${maxSizeMb} MB.`);
+        return;
+      }
+      setError(null);
+      if (onFileChange) {
+        onFileChange(nextFile);
+      } else {
+        updateField(name, nextFile);
+      }
+    };
+
+    const handleRemove = () => {
+      setError(null);
+      if (onFileChange) {
+        onFileChange(null);
+      } else {
+        updateField(name, null);
+      }
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
+    };
+
+    const openFileDialog = () => {
+      inputRef.current?.click();
+    };
 
     return (
       <div className="space-y-2">
@@ -2067,29 +2165,129 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
             </span>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="w-full rounded-2xl border border-dashed border-[color:var(--console-border)] bg-white/70 px-4 py-3 text-left text-sm text-[color:var(--console-muted)] hover:border-[var(--console-accent)] hover:text-[color:var(--console-text)]"
-        >
-          {fileLabel}
-        </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept={accept}
-          className="hidden"
-          onChange={(event) => {
-            const selectedFile = event.target.files?.[0];
-            if (selectedFile) {
-              if (onFileChange) {
-                onFileChange(selectedFile);
-              } else {
-                updateField(name, selectedFile);
-              }
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest("[data-upload-action]")) return;
+            openFileDialog();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openFileDialog();
             }
           }}
-        />
+          onDragEnter={(event) => {
+            event.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+            setIsDragging(true);
+          }}
+          onDragLeave={(event) => {
+            const nextTarget = event.relatedTarget as Node | null;
+            if (nextTarget && event.currentTarget.contains(nextTarget)) return;
+            setIsDragging(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsDragging(false);
+            const droppedFile = event.dataTransfer.files?.[0] ?? null;
+            handleFile(droppedFile);
+          }}
+          className={`relative w-full cursor-pointer rounded-2xl border border-dashed px-4 py-3 text-left text-sm transition ${
+            isDragging
+              ? "border-[var(--console-accent)] bg-white/90 text-[color:var(--console-text)]"
+              : file instanceof File
+                ? "border-white/80 bg-white/85 text-[color:var(--console-text)]"
+                : "border-[color:var(--console-border)] bg-white/70 text-[color:var(--console-muted)] hover:border-[var(--console-accent)] hover:text-[color:var(--console-text)]"
+          }`}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            className="hidden"
+            onChange={(event) => {
+              const selectedFile = event.target.files?.[0] ?? null;
+              handleFile(selectedFile);
+              event.currentTarget.value = "";
+            }}
+          />
+          {isDragging ? (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-white/80 text-xs font-semibold text-[color:var(--console-text)]">
+              Drop to upload
+            </div>
+          ) : null}
+          {file instanceof File ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt={fileLabel}
+                    className="h-12 w-12 rounded-xl border border-white/80 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/80 bg-white/70 text-xs font-semibold text-[color:var(--console-muted)]">
+                    FILE
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[color:var(--console-text)]">
+                    {fileLabel}
+                  </p>
+                  <p className="text-xs text-[color:var(--console-muted)]">
+                    {formatFileSize(file.size)}
+                    {file.type ? ` - ${file.type}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  data-upload-action="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openFileDialog();
+                  }}
+                  className="rounded-full border border-white/70 bg-white/80 px-3 py-1 text-xs font-semibold text-[color:var(--console-text)] shadow-sm"
+                >
+                  Replace
+                </button>
+                <button
+                  type="button"
+                  data-upload-action="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleRemove();
+                  }}
+                  className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 shadow-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-[color:var(--console-text)]">
+                {displayText}
+              </p>
+              {acceptHint ? (
+                <p className="text-xs text-[color:var(--console-muted)]">
+                  {acceptHint}
+                </p>
+              ) : null}
+            </div>
+          )}
+        </div>
+        {error ? (
+          <p className="text-xs text-rose-500">{error}</p>
+        ) : null}
       </div>
     );
   };
@@ -2203,6 +2401,18 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
     }
   };
 
+  submitRef.current = handleSubmit;
+
+  useEffect(() => {
+    setHeaderActions({
+      isSubmitting,
+      onPreview: () => submitRef.current("preview"),
+      onPublish: () => submitRef.current("publish"),
+    });
+
+    return () => setHeaderActions(null);
+  }, [isSubmitting, setHeaderActions]);
+
   const renderMediaTab = () => (
     <Panel className="p-6 space-y-6">
       <SectionHeader
@@ -2216,7 +2426,7 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
         <UploadField
           label="Favicon"
           name="favicon"
-          placeholder="Drag your .ico icon or Browse"
+          placeholder="Drag .ico icon here, or click to select"
           accept=".ico,image/x-icon"
         />
         <UploadField label="Hero section image" name="heroImage" />
@@ -2228,14 +2438,14 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
         <UploadField
           label="Whitepaper"
           name="whitepaper"
-          placeholder="Drag your PDF or Browse"
+          placeholder="Drag PDF here, or click to select"
           helper="Upload the latest version for investors."
           accept="application/pdf"
         />
         <UploadField
           label="Whitepaper section image"
           name="whitepaperSectionImage"
-          placeholder="Drag your png image or Browse"
+          placeholder="Drag PNG image here, or click to select"
         />
       </div>
 
@@ -2505,7 +2715,7 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
           <UploadField
             label="Upload report"
             name="reportFile"
-            placeholder="Drag your PDF or Browse"
+            placeholder="Drag PDF here, or click to select"
             accept="application/pdf"
           />
           <TextField label="Name" name="reportName" placeholder="Quarterly update" />
@@ -2872,20 +3082,6 @@ function EditPortalSection({ projectId }: { projectId?: string }) {
                 </button>
               ))}
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <ConsoleButton
-                label={isSubmitting ? "Saving..." : "Preview"}
-                variant="outline"
-                className="px-3 py-2 text-xs"
-                onClick={() => handleSubmit("preview")}
-              />
-              <ConsoleButton
-                label={isSubmitting ? "Saving..." : "Publish"}
-                variant="primary"
-                className="px-3 py-2 text-xs"
-                onClick={() => handleSubmit("publish")}
-              />
-            </div>
           </div>
         </Panel>
       </Stagger>
@@ -2980,7 +3176,7 @@ function DeleteProjectDialog({
   );
 }
 
-export default function ConsoleShell() {
+export default function ConsoleShell({ userName }: ConsoleShellProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const projectId = searchParams.get("projectId");
@@ -2990,6 +3186,8 @@ export default function ConsoleShell() {
   );
   const [projectData, setProjectData] = useState<Project | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editPortalHeaderActions, setEditPortalHeaderActions] =
+    useState<EditPortalHeaderActions | null>(null);
 
   const resolvedSection = isOverviewMode
     ? overviewItems.some((item) => item.id === activeSection)
@@ -3000,10 +3198,17 @@ export default function ConsoleShell() {
       : activeSection;
 
   const baseMeta = sectionMeta[resolvedSection];
+  const personalizedSubtitle =
+    resolvedSection === "home" && baseMeta.subtitle
+      ? baseMeta.subtitle.replace(
+          "Your Digital Asset",
+          userName ?? "Your Digital Asset",
+        )
+      : baseMeta.subtitle;
   const meta =
     isOverviewMode && overviewMetaOverrides[resolvedSection]
       ? overviewMetaOverrides[resolvedSection]
-      : baseMeta;
+      : { ...baseMeta, subtitle: personalizedSubtitle };
   const menuItems = isOverviewMode ? overviewItems : fullSecondaryItems;
   const selectItems = menuItems.some((item) => item.id === resolvedSection)
     ? menuItems
@@ -3137,11 +3342,22 @@ export default function ConsoleShell() {
         </>
       );
     }
-    // For edit-portal, the Preview / Publish actions are already rendered
-    // inside the main section toolbar (with proper form submit handlers),
-    // so we avoid duplicating them in the header.
     if (resolvedSection === "edit-portal") {
-      return null;
+      if (!editPortalHeaderActions) return null;
+      return (
+        <>
+          <ConsoleButton
+            label={editPortalHeaderActions.isSubmitting ? "Saving..." : "Preview"}
+            variant="outline"
+            onClick={editPortalHeaderActions.onPreview}
+          />
+          <ConsoleButton
+            label={editPortalHeaderActions.isSubmitting ? "Saving..." : "Publish"}
+            variant="primary"
+            onClick={editPortalHeaderActions.onPublish}
+          />
+        </>
+      );
     }
     if (resolvedSection === "documents") {
       return <ConsoleButton label="Publish" icon={CheckCircle} />;
@@ -3188,7 +3404,12 @@ export default function ConsoleShell() {
           />
         );
       case "edit-portal":
-        return <EditPortalSection projectId={projectId || undefined} />;
+        return (
+          <EditPortalSection
+            projectId={projectId || undefined}
+            setHeaderActions={setEditPortalHeaderActions}
+          />
+        );
       default:
         return null;
     }
