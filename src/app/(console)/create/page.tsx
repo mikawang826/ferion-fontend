@@ -373,10 +373,10 @@ export default function CreateWizardPage() {
     const computedSupply = Math.floor(
       Number(assetValueForTokens) / Number(values.initialPrice),
     );
-    if (!Number.isFinite(computedSupply) || computedSupply <= 0) {
-      setError("Asset Value and Initial Price result in an invalid total supply.");
-      return;
-    }
+    // if (!Number.isFinite(computedSupply) || computedSupply <= 0) {
+    //   setError("Asset Value and Initial Price result in an invalid total supply.");
+    //   return;
+    // }
 
     setError(null);
     setSuccess(null);
